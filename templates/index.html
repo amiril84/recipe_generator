@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Generator</title>
+    <style>
+        /* Reset default styles */
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 800px; /* Adjust this value as needed */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            line-height: 1.6;
+        }
+    
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+    
+        input[type="textarea"], button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+    
+        button {
+            background-color: #5cb85c;
+            color: white;
+            cursor: pointer;
+        }
+    
+        button:hover {
+            background-color: #4cae4c;
+        }
+    
+        #recipe_result {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <h1>Recipe Generator</h1>
+    <form id="form_input" method="POST" action="/generate">
+        <label>Instruction: Input any ingredients in your fridge (even 1 word is all we need) and we will generate delicious recipe for you</label>
+        <label for="ingredients">What do you have in your fridge?:</label>
+        <input type="textarea" id="input_ingredients">
+        <button type="submit">Generate Recipe</button>
+    </form>
+    <div id="recipe_result"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>  
+        const inputIngredients = document.getElementById('input_ingredients');
+        const recipeResult = document.getElementById('recipe_result');
+        const submitButton = document.querySelector('button');
+        const formInput = document.getElementById('form_input');
+        const errorMessage = document.createElement('div');
+        errorMessage.style.color = 'red';
+        formInput.insertBefore(errorMessage, inputIngredients.nextSibling);
+
+        submitButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            errorMessage.textContent = ''; // Clear previous error message
+            if (!inputIngredients.value.trim()) {
+                errorMessage.textContent = 'Please enter at least one ingredient.';
+                return;
+            }
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ingredients: inputIngredients.value}),
+            });
+            const reader = response.body.getReader();
+            let output = '';
+            while (true) {
+                const {done, value} = await reader.read();
+                output += new TextDecoder().decode(value);
+                recipeResult.innerHTML = marked.parse(output);
+                if (done) {
+                    return;
+                }
+            }
+        });
+    </script>
+    </div>
+</body>
+</html>
